@@ -1,0 +1,640 @@
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Suhu Harian Makassar 2025 | NASA POWER</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+tailwind.config = {
+    darkMode: 'class',
+    theme: {
+        extend: {
+            colors: {
+                brand: {
+                    500: '#0284c7',
+                    600: '#0369a1'
+                }
+            }
+        }
+    }
+};
+</script>
+</head>
+
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 font-sans min-h-screen">
+
+<header class="sticky top-0 z-50 bg-white/90 dark:bg-slate-800/90 backdrop-blur border-b border-slate-200 dark:border-slate-700 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div>
+            <div class="flex flex-wrap items-center gap-3">
+                <h1 class="text-2xl font-bold">Dashboard Suhu Harian Makassar</h1>
+                <span class="px-2.5 py-0.5 rounded-full text-xs bg-sky-100 text-sky-800 border border-sky-300">
+                    NASA POWER
+                </span>
+            </div>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                Makassar, Sulawesi Selatan | 1 Januari–31 Desember 2025 |
+                Koordinat sekitar 5,14° LS, 119,43° BT
+            </p>
+        </div>
+
+        <div class="flex gap-2">
+            <button id="themeToggle" class="p-2 rounded-lg border text-sm">
+                🌙 Mode Gelap
+            </button>
+            <button onclick="window.print()" class="px-3 py-2 bg-slate-900 text-white rounded-lg text-sm">
+                Cetak / Export
+            </button>
+        </div>
+    </div>
+</header>
+
+<main class="max-w-7xl mx-auto px-4 py-6 space-y-6">
+
+    <div id="status" class="rounded-xl p-4 bg-sky-50 text-sky-900 border border-sky-200 text-sm">
+        Mengambil data suhu harian dari NASA POWER. Pastikan perangkat terhubung ke internet.
+    </div>
+
+    <!-- Filter data -->
+    <section class="bg-white dark:bg-slate-800 rounded-xl p-5 border border-slate-200 dark:border-slate-700 shadow-sm">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="font-semibold">Filter Data Suhu</h2>
+            <button id="resetFilters" class="text-xs font-semibold text-sky-600">
+                Reset Filter
+            </button>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+                <label for="filterMonth" class="block text-xs mb-1 text-slate-500">Bulan</label>
+                <select id="filterMonth" class="w-full rounded-md p-2 border dark:bg-slate-700 dark:border-slate-600">
+                    <option value="All">Semua Bulan (2025)</option>
+                    <option value="1">Januari</option>
+                    <option value="2">Februari</option>
+                    <option value="3">Maret</option>
+                    <option value="4">April</option>
+                    <option value="5">Mei</option>
+                    <option value="6">Juni</option>
+                    <option value="7">Juli</option>
+                    <option value="8">Agustus</option>
+                    <option value="9">September</option>
+                    <option value="10">Oktober</option>
+                    <option value="11">November</option>
+                    <option value="12">Desember</option>
+                </select>
+            </div>
+
+            <div>
+                <label for="filterMetric" class="block text-xs mb-1 text-slate-500">Variabel Suhu</label>
+                <select id="filterMetric" class="w-full rounded-md p-2 border dark:bg-slate-700 dark:border-slate-600">
+                    <option value="mean">Suhu rata-rata harian (T2M)</option>
+                    <option value="max">Suhu maksimum harian (T2M_MAX)</option>
+                    <option value="min">Suhu minimum harian (T2M_MIN)</option>
+                </select>
+            </div>
+        </div>
+    </section>
+
+    <!-- Ringkasan statistik -->
+    <section class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+        <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border dark:border-slate-700">
+            <p class="text-xs text-slate-500">Rata-rata Suhu</p>
+            <p id="kpiAvg" class="text-2xl font-bold text-sky-600 mt-1">—</p>
+            <p class="text-xs text-slate-400">°C pada data terfilter</p>
+        </div>
+
+        <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border dark:border-slate-700">
+            <p class="text-xs text-slate-500">Suhu Tertinggi</p>
+            <p id="kpiMax" class="text-2xl font-bold text-rose-600 mt-1">—</p>
+            <p id="kpiMaxDate" class="text-xs text-slate-400">Tanggal: —</p>
+        </div>
+
+        <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border dark:border-slate-700">
+            <p class="text-xs text-slate-500">Suhu Terendah</p>
+            <p id="kpiMin" class="text-2xl font-bold text-indigo-600 mt-1">—</p>
+            <p id="kpiMinDate" class="text-xs text-slate-400">Tanggal: —</p>
+        </div>
+
+        <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border dark:border-slate-700">
+            <p class="text-xs text-slate-500">Rentang Suhu</p>
+            <p id="kpiRange" class="text-2xl font-bold mt-1">—</p>
+            <p class="text-xs text-slate-400">Maksimum − minimum</p>
+        </div>
+
+        <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border dark:border-slate-700">
+            <p class="text-xs text-slate-500">Jumlah Observasi</p>
+            <p id="kpiDays" class="text-2xl font-bold mt-1">—</p>
+            <p class="text-xs text-slate-400">Hari dengan data valid</p>
+        </div>
+    </section>
+
+    <!-- Grafik tren dan distribusi -->
+    <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 bg-white dark:bg-slate-800 p-5 rounded-xl border dark:border-slate-700">
+            <h3 class="font-semibold">Tren Suhu Harian dan Rata-rata Bergerak 7 Hari</h3>
+            <p class="text-xs text-slate-500 mb-4">Nilai suhu dalam derajat Celsius (°C)</p>
+            <div class="h-80">
+                <canvas id="trendChart"></canvas>
+            </div>
+        </div>
+
+        <div class="bg-white dark:bg-slate-800 p-5 rounded-xl border dark:border-slate-700">
+            <h3 class="font-semibold">Distribusi Rentang Suhu</h3>
+            <p class="text-xs text-slate-500 mb-4">Jumlah hari berdasarkan suhu yang dipilih</p>
+            <div class="h-80">
+                <canvas id="distributionChart"></canvas>
+            </div>
+        </div>
+    </section>
+
+    <!-- Grafik bulanan dan suhu tertinggi -->
+    <section class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-white dark:bg-slate-800 p-5 rounded-xl border dark:border-slate-700">
+            <h3 class="font-semibold">Rata-rata Suhu per Bulan</h3>
+            <p class="text-xs text-slate-500 mb-4">Rata-rata harian setiap bulan pada variabel terpilih</p>
+            <div class="h-72">
+                <canvas id="monthlyChart"></canvas>
+            </div>
+        </div>
+
+        <div class="bg-white dark:bg-slate-800 p-5 rounded-xl border dark:border-slate-700">
+            <h3 class="font-semibold">10 Hari dengan Suhu Tertinggi</h3>
+            <p class="text-xs text-slate-500 mb-4">Diurutkan dari suhu tertinggi ke terendah</p>
+            <div class="h-72">
+                <canvas id="topChart"></canvas>
+            </div>
+        </div>
+    </section>
+
+    <!-- Ringkasan dan sumber data -->
+    <section class="bg-slate-900 text-white p-6 rounded-xl">
+        <h2 class="text-lg font-bold mb-3">Catatan Data dan Interpretasi</h2>
+
+        <p id="summary" class="text-sm text-slate-200 leading-relaxed">
+            Ringkasan akan muncul setelah data berhasil dimuat.
+        </p>
+
+        <p class="text-xs text-slate-400 mt-4">
+            Sumber: NASA POWER Daily API.
+            T2M = suhu udara rata-rata pada ketinggian 2 m;
+            T2M_MAX = suhu maksimum harian;
+            T2M_MIN = suhu minimum harian.
+            Data NASA POWER berbasis pemodelan dan reanalisis, sehingga tidak selalu identik dengan pengamatan langsung stasiun BMKG.
+        </p>
+
+        <p class="text-xs mt-2">
+            <a class="underline text-sky-300" target="_blank" rel="noopener"
+               href="https://power.larc.nasa.gov/docs/services/api/temporal/daily/">
+                Dokumentasi resmi NASA POWER Daily API
+            </a>
+        </p>
+    </section>
+
+</main>
+
+<script>
+// URL API NASA POWER untuk suhu Makassar sepanjang tahun 2025
+const API_URL =
+    'https://power.larc.nasa.gov/api/temporal/daily/point?parameters=T2M,T2M_MAX,T2M_MIN&community=RE&longitude=119.4327&latitude=-5.1477&start=20250101&end=20251231&format=JSON';
+
+// Nama bulan untuk label grafik
+const months = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
+    'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'
+];
+
+// Menyimpan data dan grafik
+let rawDataset = [];
+let charts = {};
+
+// Mengubah angka menjadi format suhu Celsius
+const fmt = v =>
+    Number.isFinite(v) ? `${v.toFixed(1)} °C` : '—';
+
+// Mengambil variabel suhu yang sedang dipilih
+function selectedKey() {
+    return document.getElementById('filterMetric').value;
+}
+
+// Memfilter data berdasarkan bulan
+function getFilteredData() {
+    const m = document.getElementById('filterMonth').value;
+
+    return rawDataset.filter(d =>
+        m === 'All' || String(d.monthNo) === m
+    );
+}
+
+// Membuat label tanggal untuk grafik
+function dateLabel(d) {
+    return `${d.day} ${months[d.monthNo - 1]}`;
+}
+
+// Nama variabel berdasarkan pilihan filter
+function metricName() {
+    return {
+        mean: 'Suhu rata-rata harian',
+        max: 'Suhu maksimum harian',
+        min: 'Suhu minimum harian'
+    }[selectedKey()];
+}
+
+// Menghapus grafik sebelumnya sebelum membuat grafik baru
+function destroyChart(k) {
+    if (charts[k]) charts[k].destroy();
+}
+
+// Memperbarui kartu statistik
+function updateKPIs(data) {
+    const key = selectedKey();
+
+    const valid = data.filter(d =>
+        Number.isFinite(d[key])
+    );
+
+    const avg = valid.length
+        ? valid.reduce((s, d) => s + d[key], 0) / valid.length
+        : NaN;
+
+    const hi = valid.length
+        ? valid.reduce((a, b) => a[key] > b[key] ? a : b)
+        : null;
+
+    const lo = valid.length
+        ? valid.reduce((a, b) => a[key] < b[key] ? a : b)
+        : null;
+
+    document.getElementById('kpiAvg').textContent = fmt(avg);
+    document.getElementById('kpiMax').textContent = hi ? fmt(hi[key]) : '—';
+    document.getElementById('kpiMin').textContent = lo ? fmt(lo[key]) : '—';
+
+    document.getElementById('kpiMaxDate').textContent =
+        hi ? `Tanggal: ${hi.dateStr}` : 'Tanggal: —';
+
+    document.getElementById('kpiMinDate').textContent =
+        lo ? `Tanggal: ${lo.dateStr}` : 'Tanggal: —';
+
+    document.getElementById('kpiRange').textContent =
+        hi && lo ? fmt(hi[key] - lo[key]) : '—';
+
+    document.getElementById('kpiDays').textContent = valid.length;
+
+    // Membuat ringkasan berdasarkan data yang ditampilkan
+    const monthFilter = document.getElementById('filterMonth').value;
+
+    const period = monthFilter === 'All'
+        ? 'periode tahun 2025'
+        : `${months[Number(monthFilter) - 1]} 2025`;
+
+    document.getElementById('summary').textContent = valid.length
+        ? `Untuk ${period}, ${metricName().toLowerCase()} tercatat rata-rata ${avg.toFixed(1)} °C. Nilai tertinggi ${hi[key].toFixed(1)} °C terjadi pada ${hi.dateStr}, sedangkan nilai terendah ${lo[key].toFixed(1)} °C terjadi pada ${lo.dateStr}. Interpretasi ini menggambarkan data NASA POWER untuk titik koordinat yang dipilih, bukan otomatis pengukuran langsung stasiun cuaca.`
+        : 'Tidak ada data valid pada filter ini.';
+}
+
+// Membuat grafik tren suhu harian dan rata-rata bergerak 7 hari
+function updateTrend(data) {
+    destroyChart('trend');
+
+    const key = selectedKey();
+
+    const valid = data.filter(d =>
+        Number.isFinite(d[key])
+    );
+
+    const vals = valid.map(d => d[key]);
+
+    // Menghitung rata-rata bergerak selama 7 hari
+    const ma = vals.map((v, i) => {
+        const a = vals.slice(Math.max(0, i - 6), i + 1);
+        return a.reduce((s, x) => s + x, 0) / a.length;
+    });
+
+    charts.trend = new Chart(
+        document.getElementById('trendChart'),
+        {
+            type: 'line',
+
+            data: {
+                labels: valid.map(dateLabel),
+
+                datasets: [
+                    {
+                        label: metricName() + ' (°C)',
+                        data: vals,
+                        borderColor: '#0284c7',
+                        backgroundColor: 'rgba(2,132,199,.15)',
+                        pointRadius: 0,
+                        borderWidth: 1.5,
+                        tension: 0.15
+                    },
+                    {
+                        label: 'Rata-rata bergerak 7 hari (°C)',
+                        data: ma,
+                        borderColor: '#f59e0b',
+                        pointRadius: 0,
+                        borderWidth: 2,
+                        tension: 0.25
+                    }
+                ]
+            },
+
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+
+                interaction: {
+                    mode: 'index',
+                    intersect: false
+                },
+
+                scales: {
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Suhu (°C)'
+                        }
+                    }
+                }
+            }
+        }
+    );
+}
+
+// Membuat grafik distribusi suhu
+function updateDistribution(data) {
+    destroyChart('dist');
+
+    const key = selectedKey();
+
+    const v = data
+        .filter(d => Number.isFinite(d[key]))
+        .map(d => d[key]);
+
+    const bins = [0, 0, 0, 0, 0];
+
+    const labels = [
+        '< 25 °C',
+        '25–< 27 °C',
+        '27–< 29 °C',
+        '29–< 31 °C',
+        '≥ 31 °C'
+    ];
+
+    // Mengelompokkan data ke dalam rentang suhu
+    v.forEach(x => {
+        if (x < 25) bins[0]++;
+        else if (x < 27) bins[1]++;
+        else if (x < 29) bins[2]++;
+        else if (x < 31) bins[3]++;
+        else bins[4]++;
+    });
+
+    charts.dist = new Chart(
+        document.getElementById('distributionChart'),
+        {
+            type: 'doughnut',
+
+            data: {
+                labels: labels,
+
+                datasets: [{
+                    data: bins,
+                    backgroundColor: [
+                        '#0f766e',
+                        '#38bdf8',
+                        '#0284c7',
+                        '#f59e0b',
+                        '#e11d48'
+                    ]
+                }]
+            },
+
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        }
+    );
+}
+
+// Menghitung dan menampilkan rata-rata suhu bulanan
+function updateMonthly(data) {
+    destroyChart('monthly');
+
+    const key = selectedKey();
+
+    const means = [];
+    const labels = [];
+
+    for (let m = 1; m <= 12; m++) {
+        const a = data.filter(d =>
+            d.monthNo === m && Number.isFinite(d[key])
+        );
+
+        if (a.length) {
+            labels.push(months[m - 1]);
+
+            means.push(
+                a.reduce((s, d) => s + d[key], 0) / a.length
+            );
+        }
+    }
+
+    charts.monthly = new Chart(
+        document.getElementById('monthlyChart'),
+        {
+            type: 'bar',
+
+            data: {
+                labels: labels,
+
+                datasets: [{
+                    label: 'Rata-rata suhu (°C)',
+                    data: means,
+                    backgroundColor: '#0284c7'
+                }]
+            },
+
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+
+                scales: {
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Suhu (°C)'
+                        }
+                    }
+                }
+            }
+        }
+    );
+}
+
+// Menampilkan 10 hari dengan suhu tertinggi
+function updateTop(data) {
+    destroyChart('top');
+
+    const key = selectedKey();
+
+    const a = data
+        .filter(d => Number.isFinite(d[key]))
+        .sort((x, y) => y[key] - x[key])
+        .slice(0, 10)
+        .reverse();
+
+    charts.top = new Chart(
+        document.getElementById('topChart'),
+        {
+            type: 'bar',
+
+            data: {
+                labels: a.map(dateLabel),
+
+                datasets: [{
+                    label: metricName() + ' (°C)',
+                    data: a.map(d => d[key]),
+                    backgroundColor: '#e11d48'
+                }]
+            },
+
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Suhu (°C)'
+                        }
+                    }
+                }
+            }
+        }
+    );
+}
+
+// Memperbarui seluruh komponen dashboard
+function updateDashboard() {
+    const data = getFilteredData();
+
+    updateKPIs(data);
+    updateTrend(data);
+    updateDistribution(data);
+    updateMonthly(data);
+    updateTop(data);
+}
+
+// Mengambil data suhu harian dari NASA POWER API
+async function loadData() {
+    const status = document.getElementById('status');
+
+    try {
+        const response = await fetch(API_URL);
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+
+        const json = await response.json();
+
+        const p = json.properties?.parameter;
+
+        if (!p?.T2M || !p?.T2M_MAX || !p?.T2M_MIN) {
+            throw new Error('Parameter suhu tidak tersedia pada respons API.');
+        }
+
+        // Mengurutkan tanggal dari awal hingga akhir tahun
+        const keys = Object.keys(p.T2M).sort();
+
+        // Mengubah respons API menjadi struktur data dashboard
+        rawDataset = keys.map(k => {
+            const y = Number(k.slice(0, 4));
+            const m = Number(k.slice(4, 6));
+            const day = Number(k.slice(6, 8));
+
+            // Menangani nilai kosong atau nilai penanda data tidak valid
+            const clean = x =>
+                Number.isFinite(Number(x)) && Number(x) !== -999
+                    ? Number(x)
+                    : NaN;
+
+            return {
+                year: y,
+                monthNo: m,
+                day: day,
+                dateStr: `${day} ${months[m - 1]} ${y}`,
+                mean: clean(p.T2M[k]),
+                max: clean(p.T2M_MAX[k]),
+                min: clean(p.T2M_MIN[k])
+            };
+        }).filter(d =>
+            Number.isFinite(d.mean) ||
+            Number.isFinite(d.max) ||
+            Number.isFinite(d.min)
+        );
+
+        if (!rawDataset.length) {
+            throw new Error('Data kosong.');
+        }
+
+        // Menampilkan status ketika data berhasil dimuat
+        status.className =
+            'rounded-xl p-4 bg-emerald-50 text-emerald-900 border border-emerald-200 text-sm';
+
+        status.textContent =
+            `Data berhasil dimuat: ${rawDataset.length} hari dari NASA POWER untuk Makassar, 2025.`;
+
+        updateDashboard();
+
+    } catch (err) {
+        // Menampilkan pesan jika data gagal diambil
+        status.className =
+            'rounded-xl p-4 bg-rose-50 text-rose-900 border border-rose-200 text-sm';
+
+        status.innerHTML =
+            `Data gagal dimuat dari NASA POWER. Periksa koneksi internet atau coba buka file melalui browser lain. Detail: ${err.message}. API yang digunakan: <a class="underline" target="_blank" rel="noopener" href="${API_URL}">buka respons NASA POWER</a>.`;
+    }
+}
+
+// Memperbarui dashboard ketika bulan atau variabel suhu diubah
+document.getElementById('filterMonth')
+    .addEventListener('change', updateDashboard);
+
+document.getElementById('filterMetric')
+    .addEventListener('change', updateDashboard);
+
+// Mengembalikan filter ke kondisi awal
+document.getElementById('resetFilters')
+    .addEventListener('click', () => {
+        document.getElementById('filterMonth').value = 'All';
+        document.getElementById('filterMetric').value = 'mean';
+        updateDashboard();
+    });
+
+// Mengaktifkan atau menonaktifkan mode gelap
+document.getElementById('themeToggle')
+    .addEventListener('click', () => {
+        document.documentElement.classList.toggle('dark');
+    });
+
+// Menjalankan pengambilan data saat halaman dibuka
+loadData();
+</script>
+
+</body>
+</html>
